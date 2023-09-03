@@ -1,6 +1,8 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:huntoo/utils/permission_utils.dart';
+import 'package:huntoo/widgets/maps/p_map.dart';
 import 'package:maplibre_gl/mapbox_gl.dart';
 
 class DashBoard extends StatefulWidget {
@@ -13,32 +15,14 @@ class DashBoard extends StatefulWidget {
 class _DashBoardState extends State<DashBoard> {
   @override
   void initState() {
+    PermissionsUtils().handlePermission();
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    final MaplibreMap map = MaplibreMap(
-      trackCameraPosition: true,
-      onMapCreated: (controller) async {
-        // var val = await controller.requestMyLocationLatLng();
-        // log('${val?.latitude} - ${val?.longitude}');
-      },
-      compassEnabled: true,
-      styleString:
-          'https://tiles.stadiamaps.com/styles/osm_bright.json?api_key=f71741e6-1bcc-4544-ae46-d322e43419a8',
-      initialCameraPosition: const CameraPosition(
-        target: LatLng(12.877015, 77.601627),
-        zoom: 11.0,
-      ),
-      myLocationEnabled: true,
-      myLocationRenderMode: MyLocationRenderMode.GPS,
-      myLocationTrackingMode: MyLocationTrackingMode.TrackingCompass,
-      onUserLocationUpdated: (location) {
-        log(
-            "new location: ${location.position}, alt.: ${location.altitude}, bearing: ${location.bearing}, speed: ${location.speed}, horiz. accuracy: ${location.horizontalAccuracy}, vert. accuracy: ${location.verticalAccuracy}");
-      },
-    );
+    final PMap map =
+        PMap(onMapCreated: (controller) {}, onStyleLoadedCallback: () {});
     return Scaffold(
       drawer: const Drawer(),
       appBar: AppBar(
@@ -51,7 +35,6 @@ class _DashBoardState extends State<DashBoard> {
       body: Center(
         child: Stack(
           children: [
-            // PMap(onMapCreated: (controller) {}, onStyleLoadedCallback: () {}),
             map,
             Positioned(
               bottom: 0,

@@ -66,6 +66,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final PMap map = PMap(
+        onMapCreated: _onMapCreated,
+        onStyleLoadedCallback: _onStyleLoadedCallback);
     return Scaffold(
       body: Stack(
         children: [
@@ -74,9 +77,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
             width: MediaQuery.of(context).size.width,
             child: Stack(
               children: [
-                PMap(
-                    onMapCreated: _onMapCreated,
-                    onStyleLoadedCallback: _onStyleLoadedCallback),
+                map,
                 Visibility(
                   visible: PTools.pin == tools,
                   child: Positioned(

@@ -41,7 +41,10 @@ dependencies:
   google_fonts: ^5.1.0
   flutter_map: ^5.0.0
   vector_map_tiles: ^5.0.0
-  maplibre_gl: ^0.16.0
+  maplibre_gl:
+      git:
+        url: https://github.com/maplibre/flutter-maplibre-gl.git
+        ref: main
 
 dev_dependencies:
   flutter_test:
