@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:huntoo/providers/map_provider.dart';
 import 'package:huntoo/screens/dash_board_screen.dart';
 import 'package:huntoo/screens/friend_list_screen.dart';
 import 'package:huntoo/screens/planner_screen.dart';
 import 'package:huntoo/screens/profile_screen.dart';
+import 'package:maplibre_gl/mapbox_gl.dart';
+import 'package:provider/provider.dart';
+
+import 'create_hunt_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,8 +19,11 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final PageController _pageController = PageController();
   int currIndex = 0;
+
   @override
   void initState() {
+    context.read<MapProvider>().set();
+
     super.initState();
   }
 
@@ -30,6 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: const [
           DashBoard(),
           PlannerScreen(),
+          CreateHuntScreen(),
           FriendListScreen(),
           ProfileScreen(),
         ],
@@ -45,6 +54,8 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: Icon(Icons.home_filled), label: 'Dashboard'),
           BottomNavigationBarItem(
               icon: Icon(Icons.search_rounded), label: 'Planner'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.local_hospital_rounded), label: 'Create'),
           BottomNavigationBarItem(
               icon: Icon(Icons.people_alt_rounded), label: 'Friends'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),

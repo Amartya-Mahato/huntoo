@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class PlannerPinTooltipSettings extends StatelessWidget {
-  const PlannerPinTooltipSettings({Key? key}) : super(key: key);
+class CreateHuntScreen extends StatelessWidget {
+  const CreateHuntScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
