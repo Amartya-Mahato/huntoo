@@ -64,7 +64,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
   void _onStyleLoadedCallback() async {
     _centerTRBLPoints();
     final ByteData redFlagByte =
-        await rootBundle.load('lib/assets/pins/red-flag-hint-pin.png');
+        await rootBundle.load('lib/assets/pins/placeholder.png');
     final Uint8List redFlagList = redFlagByte.buffer.asUint8List();
     await _mapController.addImage("red-flag", redFlagList);
 
@@ -522,61 +522,61 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 highlightColor:
                     const Color.fromARGB(131, 238, 238, 238).withOpacity(0.5),
                 tooltip: 'red flag',
-                visualDensity: const VisualDensity(vertical: 3),
+                //visualDensity: const VisualDensity(vertical: 3),
                 onPressed: () {
                   _putPin(name: 'red-flag');
                 },
                 icon: Image.asset(
-                  'lib/assets/pins/red-flag-hint-pin.png',
-                  height: 30,
-                  width: 30,
+                  'lib/assets/pins/placeholder.png',
+                  height: 40,
+                  width: 40,
                 ),
               )),
-          Padding(
-              padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
-              child: IconButton.outlined(
-                isSelected: false,
-                highlightColor:
-                    const Color.fromARGB(131, 238, 238, 238).withOpacity(0.5),
-                tooltip: 'yellow flag',
-                visualDensity: const VisualDensity(vertical: 3),
-                onPressed: () {},
-                icon: Image.asset(
-                  'lib/assets/pins/red-flag-hint-pin.png',
-                  height: 30,
-                  width: 30,
-                ),
-              )),
-          Padding(
-              padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
-              child: IconButton.outlined(
-                isSelected: false,
-                highlightColor:
-                    const Color.fromARGB(131, 238, 238, 238).withOpacity(0.5),
-                tooltip: 'green flag',
-                visualDensity: const VisualDensity(vertical: 3),
-                onPressed: () {},
-                icon: Image.asset(
-                  'lib/assets/pins/red-flag-hint-pin.png',
-                  height: 30,
-                  width: 30,
-                ),
-              )),
-          Padding(
-              padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
-              child: IconButton.outlined(
-                isSelected: false,
-                highlightColor:
-                    const Color.fromARGB(131, 238, 238, 238).withOpacity(0.5),
-                tooltip: 'blue flag',
-                visualDensity: const VisualDensity(vertical: 3),
-                onPressed: () {},
-                icon: Image.asset(
-                  'lib/assets/pins/red-flag-hint-pin.png',
-                  height: 30,
-                  width: 30,
-                ),
-              )),
+          // Padding(
+          //     padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
+          //     child: IconButton.outlined(
+          //       isSelected: false,
+          //       highlightColor:
+          //           const Color.fromARGB(131, 238, 238, 238).withOpacity(0.5),
+          //       tooltip: 'yellow flag',
+          //       visualDensity: const VisualDensity(vertical: 3),
+          //       onPressed: () {},
+          //       icon: Image.asset(
+          //         'lib/assets/pins/red-flag-hint-pin.png',
+          //         height: 30,
+          //         width: 30,
+          //       ),
+          //     )),
+          // Padding(
+          //     padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
+          //     child: IconButton.outlined(
+          //       isSelected: false,
+          //       highlightColor:
+          //           const Color.fromARGB(131, 238, 238, 238).withOpacity(0.5),
+          //       tooltip: 'green flag',
+          //       visualDensity: const VisualDensity(vertical: 3),
+          //       onPressed: () {},
+          //       icon: Image.asset(
+          //         'lib/assets/pins/red-flag-hint-pin.png',
+          //         height: 30,
+          //         width: 30,
+          //       ),
+          //     )),
+          // Padding(
+          //     padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
+          //     child: IconButton.outlined(
+          //       isSelected: false,
+          //       highlightColor:
+          //           const Color.fromARGB(131, 238, 238, 238).withOpacity(0.5),
+          //       tooltip: 'blue flag',
+          //       visualDensity: const VisualDensity(vertical: 3),
+          //       onPressed: () {},
+          //       icon: Image.asset(
+          //         'lib/assets/pins/red-flag-hint-pin.png',
+          //         height: 30,
+          //         width: 30,
+          //       ),
+          //     )),
         ]),
       ),
     );
