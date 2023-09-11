@@ -45,6 +45,7 @@ dependencies:
       git:
         url: https://github.com/maplibre/flutter-maplibre-gl.git
         ref: main
+  dotted_border: ^2.0.0+3
 
 dev_dependencies:
   flutter_test:
