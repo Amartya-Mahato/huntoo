@@ -1,16 +1,21 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:maplibre_gl/mapbox_gl.dart';
 
 class PMap extends StatelessWidget {
   ValueSetter<MaplibreMapController> onMapCreated;
+  Function(Point<double> point, LatLng coordinates)? onMapClick;
   ValueGetter<void>? onStyleLoadedCallback;
   bool currentLocation;
   PMap(
       {super.key,
       this.currentLocation = false,
+      this.onMapClick,
       required this.onMapCreated,
-      required this.onStyleLoadedCallback});
+      this.onStyleLoadedCallback});
 
+  void _onMapClick(Point<double> point, LatLng coordinates) {}
   @override
   Widget build(BuildContext context) {
     return MaplibreMap(
@@ -26,7 +31,7 @@ class PMap extends StatelessWidget {
       myLocationEnabled: true,
       myLocationRenderMode: MyLocationRenderMode.COMPASS,
       myLocationTrackingMode: MyLocationTrackingMode.TrackingGPS,
-      onUserLocationUpdated: (location) {},
+      onMapClick: onMapClick,
     );
   }
 }

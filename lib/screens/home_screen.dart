@@ -4,7 +4,6 @@ import 'package:huntoo/screens/dash_board_screen.dart';
 import 'package:huntoo/screens/friend_list_screen.dart';
 import 'package:huntoo/screens/planner_screen.dart';
 import 'package:huntoo/screens/profile_screen.dart';
-import 'package:maplibre_gl/mapbox_gl.dart';
 import 'package:provider/provider.dart';
 
 import 'create_hunt_screen.dart';

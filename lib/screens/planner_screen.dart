@@ -11,6 +11,7 @@ import 'package:huntoo/widgets/tooltips/planner_tooltips/planner_pin_tooltip.dar
 import 'package:maplibre_gl/mapbox_gl.dart';
 import 'package:provider/provider.dart';
 
+import '../utils/random_string_generator.dart';
 import '../widgets/maps/p_map.dart';
 
 class PlannerScreen extends StatefulWidget {
@@ -23,12 +24,12 @@ class PlannerScreen extends StatefulWidget {
 class _PlannerScreenState extends State<PlannerScreen> {
   late final MaplibreMapController _mapController;
   PTools tools = PTools.none;
-  List<Symbol> pins = [];
   List<String> elementIds = [];
   List<String> elementNames = [];
   List<String> redoElementNames = [];
   List<String> redoElementIds = [];
   List<HistoryElement> history = [];
+  LatLng? lastConnectorSymbolLatLng;
   String lastShape = '';
   Offset? centerPoint;
   late final Point<num> centerPointAsPoint;
@@ -37,29 +38,172 @@ class _PlannerScreenState extends State<PlannerScreen> {
   late final Point<num> bottomLeft;
   late final Point<num> bottomRight;
   bool shapeConfirmationVisibility = false;
+  bool symbolConnector = false;
+  bool pointConnector = false;
+  Circle? circle;
 
   @override
   void initState() {
     super.initState();
   }
 
+  @override
+  Widget build(BuildContext context) {
+    final PMap map = PMap(
+        onMapClick: _onMapClick,
+        onMapCreated: _onMapCreated,
+        onStyleLoadedCallback: _onStyleLoadedCallback);
+    history = context.watch<PlannerHistoryProvider>().historyList;
+    return SafeArea(
+      child: Scaffold(
+        body: Stack(
+          children: [
+            map,
+            // centerPoint != null
+            //     ? Positioned(
+            //         left: centerPoint!.dx - 525,
+            //         top: centerPoint!.dy - 936,
+            //         child: Container(
+            //           width: 380,
+            //           height: 380,
+            //           decoration: BoxDecoration(
+            //               color: Colors.transparent,
+            //               shape: BoxShape.circle,
+            //               border: Border.all(color: Colors.black54)),
+            //           child: Container(),
+            //         ),
+            //       )
+            //     : Container(),
+            _historyPannel(context),
+            Visibility(
+              visible: PTools.connector == tools,
+              child: Positioned(
+                left: 0,
+                bottom: 0,
+                child: Column(children: [
+                  Padding(
+                      padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
+                      child: IconButton.outlined(
+                        isSelected: false,
+                        highlightColor: const Color.fromARGB(131, 238, 238, 238)
+                            .withOpacity(0.5),
+                        tooltip: 'square',
+                        onPressed: () async {},
+                        icon: const Icon(Icons.touch_app),
+                      )),
+                  Padding(
+                      padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
+                      child: IconButton.outlined(
+                        isSelected: false,
+                        highlightColor: const Color.fromARGB(131, 238, 238, 238)
+                            .withOpacity(0.5),
+                        tooltip: 'circle',
+                        onPressed: () async {
+                          symbolConnector = true;
+                        },
+                        icon: const Icon(Icons.polyline_rounded),
+                      )),
+                ]),
+              ),
+            ),
+            _shapeTools(),
+            _pinTool(),
+            _tools(),
+            _shapeConfirmationButtons(context)
+          ],
+        ),
+      ),
+    );
+  }
+
   void _onMapCreated(MaplibreMapController mapController) {
     _mapController = mapController;
     _mapController.onSymbolTapped.add(
-      (argument) {
-        showDialog(
-            context: context,
-            barrierColor: Colors.transparent,
-            builder: (BuildContext ctx) {
-              return BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-                child: Dialog(
-                  insetAnimationDuration: const Duration(milliseconds: 50),
-                  elevation: 10,
-                  child: PlannerPinTolltip().getToolTip,
-                ),
-              );
-            });
+      (argument) async {
+        if (symbolConnector) {
+          // if (lineLatLngs.length >= 2 &&
+          //     lineLatLngs.last.latitude ==
+          //         argument.options.geometry!.latitude &&
+          //     lineLatLngs.last.longitude ==
+          //         argument.options.geometry!.longitude) {
+          //   if (lineLatLngs.length > 2) {
+          //     Set<Line> lines = _mapController.lines;
+          //     lineLatLngs.removeLast();
+          //     await _mapController.addLine(LineOptions(
+          //         lineColor: 'black',
+          //         lineWidth: 3,
+          //         geometry: lineLatLngs,
+          //         lineOpacity: 0.5));
+          //     await _mapController.removeLine(lines.last);
+          //   }
+          //   return;
+          // }
+          // lineLatLngs.add(argument.options.geometry!);
+
+          // if (lineLatLngs.length >= 2) {
+          //   if (lineLatLngs.length > 2) {
+          //     Set<Line> lines = _mapController.lines;
+          //     await _mapController.removeLine(lines.last);
+          //   }
+
+          //   _mapController.addLine(LineOptions(
+          //       lineColor: 'black',
+          //       lineWidth: 3,
+          //       geometry: lineLatLngs,
+          //       lineOpacity: 0.5));
+          // }
+          // setState(() {});
+
+          if (lastConnectorSymbolLatLng != null) {
+            List<LatLng> tempLatLngList = [];
+            Line tempLine;
+            if (historyLength() > 0 && historyGetLast()!.name == 'sline') {
+              tempLatLngList = ((historyGetLast()!.element as Map)['geometry']
+                      ['coordinates'] as List<dynamic>)
+                  .map((e) => LatLng(e.last, e.first))
+                  .toList();
+              tempLatLngList.add(argument.options.geometry!);
+              Line tmepPrevLine = _mapController.lines.last;
+              tempLine = await _mapController.addLine(LineOptions(
+                  lineColor: 'black',
+                  lineWidth: 3,
+                  geometry: tempLatLngList,
+                  lineOpacity: 0.5));
+              await _mapController.removeLine(tmepPrevLine);
+            } else {
+              tempLatLngList = [
+                lastConnectorSymbolLatLng!,
+                argument.options.geometry!
+              ];
+              tempLine = await _mapController.addLine(LineOptions(
+                  lineColor: 'black',
+                  lineWidth: 3,
+                  geometry: tempLatLngList,
+                  lineOpacity: 0.5));
+            }
+            historyAdd(
+                name: 'sline',
+                action: HAction.add,
+                category: HCategory.polyline,
+                element: tempLine.toGeoJson());
+          }
+          lastConnectorSymbolLatLng = argument.options.geometry!;
+          setState(() {});
+        } else {
+          showDialog(
+              context: context,
+              barrierColor: Colors.transparent,
+              builder: (BuildContext ctx) {
+                return BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                  child: Dialog(
+                    insetAnimationDuration: const Duration(milliseconds: 50),
+                    elevation: 10,
+                    child: PlannerPinTolltip().getToolTip,
+                  ),
+                );
+              });
+        }
       },
     );
   }
@@ -73,99 +217,362 @@ class _PlannerScreenState extends State<PlannerScreen> {
     _mapController.onSymbolTapped.add((argument) {});
   }
 
-  Circle? circle;
+  void _onMapClick(Point<double> point, LatLng coordinates) async {
+    // await _mapController.addCircle(CircleOptions(
+    //     circleColor: 'red', geometry: coordinates, circleRadius: 5));
+    // await _mapController.addLine(LineOptions(
+    //     // lineJoin: "round",
+    //     lineColor: 'black',
+    //     lineWidth: 3,
+    //     geometry: [
+    //       coordinates,
+    //       LatLng(coordinates.latitude + 0.01, coordinates.longitude + 0.01),
+    //       LatLng(coordinates.latitude + 0.03, coordinates.longitude + 0.02),
+    //       LatLng(coordinates.latitude + 0.06, coordinates.longitude + 0.01),
+    //       LatLng(coordinates.latitude + 0.04, coordinates.longitude + 0.09),
+    //     ]));
 
-  @override
-  Widget build(BuildContext context) {
-    final PMap map = PMap(
-        onMapCreated: _onMapCreated,
-        onStyleLoadedCallback: _onStyleLoadedCallback);
-    history = context.watch<PlannerHistoryProvider>().historyList;
-    print('---> ${history.length}');
-    return Scaffold(
-      body: Stack(
-        children: [
-          map,
-          // centerPoint != null
-          //     ? Positioned(
-          //         left: centerPoint!.dx - 525,
-          //         top: centerPoint!.dy - 936,
-          //         child: Container(
-          //           width: 380,
-          //           height: 380,
-          //           decoration: BoxDecoration(
-          //               color: Colors.transparent,
-          //               shape: BoxShape.circle,
-          //               border: Border.all(color: Colors.black54)),
-          //           child: Container(),
-          //         ),
-          //       )
-          //     : Container(),
-          _historyPannel(context),
-          _shapeTools(),
-          _pinTool(),
-          _tools(),
-          _shapeConfirmationButtons(context)
-        ],
-      ),
-    );
+    // await _mapController.addFill(FillOptions(fillColor: 'black', geometry: [
+    //   [
+    //     coordinates,
+    //     LatLng(coordinates.latitude + 0.01, coordinates.longitude + 0.01),
+    //     LatLng(coordinates.latitude + 0.03, coordinates.longitude + 0.02),
+    //     LatLng(coordinates.latitude + 0.06, coordinates.longitude + 0.01),
+    //     LatLng(coordinates.latitude + 0.04, coordinates.longitude + 0.09),
+    //     coordinates,
+    //   ],
+    // ]));
+  }
+
+  Future<void> _performOppositeHistoryAction(
+      HistoryElement historyElement) async {
+    switch (historyElement.action) {
+      case HAction.delete:
+        {
+          await _addHistoryAction(historyElement);
+          setState(() {});
+          break;
+        }
+      case HAction.add:
+        {
+          await _deleteHistoryAction(historyElement);
+          setState(() {});
+          break;
+        }
+      case HAction.modify:
+        {
+          break;
+        }
+      default:
+    }
+  }
+
+  Future<void> _performHistoryAction(HistoryElement historyElement) async {
+    switch (historyElement.action) {
+      case HAction.add:
+        {
+          await _addHistoryAction(historyElement);
+          setState(() {});
+          break;
+        }
+      case HAction.delete:
+        {
+          await _deleteHistoryAction(historyElement);
+          setState(() {});
+          break;
+        }
+      case HAction.modify:
+        {
+          break;
+        }
+      default:
+    }
+  }
+
+  Future<void> _addHistoryAction(HistoryElement historyElement) async {
+    switch (historyElement.catagory) {
+      case HCategory.symbol:
+        {
+          LatLng latLng = LatLng(
+              (historyElement.element as Map)['geometry']['coordinates'][1],
+              (historyElement.element as Map)['geometry']['coordinates'][0]);
+          await _mapController.addSymbol(SymbolOptions(
+              iconImage: (historyElement.element as Map)['properties']
+                  ['iconImage'],
+              iconSize: 0.2,
+              textField: '',
+              fontNames: ['Open Sans Regular'],
+              draggable: true,
+              textSize: 15,
+              textOffset: const Offset(-0.6, 1.3),
+              textHaloColor: 'grey',
+              geometry: latLng));
+          break;
+        }
+      case HCategory.shape:
+        {
+          LatLng topLeftLatLng =
+              (historyElement.element as Map)['coordinates']['topLeft'];
+          LatLng topRightLatLng =
+              (historyElement.element as Map)['coordinates']['topRight'];
+          LatLng bottomLeftLatLng =
+              (historyElement.element as Map)['coordinates']['bottomLeft'];
+          LatLng bottomRightLatLng =
+              (historyElement.element as Map)['coordinates']['bottomRight'];
+
+          double minZoom = (historyElement.element as Map)['minzoom'];
+          double maxZoom = (historyElement.element as Map)['maxzoom'];
+
+          switch (historyElement.name) {
+            case 'circle':
+              {
+                final ByteData bytes =
+                    await rootBundle.load('lib/assets/pins/circle.png');
+                final Uint8List uInt8Data = bytes.buffer.asUint8List();
+                String sourceId = (historyElement.element as Map)['id'];
+                await _mapController.addImageSource(
+                    sourceId,
+                    uInt8Data,
+                    LatLngQuad(
+                        topLeft: topLeftLatLng,
+                        topRight: topRightLatLng,
+                        bottomRight: bottomRightLatLng,
+                        bottomLeft: bottomLeftLatLng));
+
+                await _mapController.addImageLayer(sourceId, sourceId,
+                    maxzoom: maxZoom, minzoom: minZoom);
+                break;
+              }
+            case 'square':
+              {
+                final ByteData bytes =
+                    await rootBundle.load('lib/assets/pins/square.png');
+                final Uint8List uInt8Data = bytes.buffer.asUint8List();
+                String sourceId = (historyElement.element as Map)['id'];
+                await _mapController.addImageSource(
+                    sourceId,
+                    uInt8Data,
+                    LatLngQuad(
+                        topLeft: topLeftLatLng,
+                        topRight: topRightLatLng,
+                        bottomRight: bottomRightLatLng,
+                        bottomLeft: bottomLeftLatLng));
+
+                await _mapController.addImageLayer(sourceId, sourceId,
+                    maxzoom: maxZoom, minzoom: minZoom);
+                break;
+              }
+            case 'triangle':
+              {
+                final ByteData bytes =
+                    await rootBundle.load('lib/assets/pins/triangle.png');
+                final Uint8List uInt8Data = bytes.buffer.asUint8List();
+                String sourceId = (historyElement.element as Map)['id'];
+                await _mapController.addImageSource(
+                    sourceId,
+                    uInt8Data,
+                    LatLngQuad(
+                        topLeft: topLeftLatLng,
+                        topRight: topRightLatLng,
+                        bottomRight: bottomRightLatLng,
+                        bottomLeft: bottomLeftLatLng));
+
+                await _mapController.addImageLayer(sourceId, sourceId,
+                    maxzoom: maxZoom, minzoom: minZoom);
+                break;
+              }
+            case 'rectangle':
+              {
+                final ByteData bytes =
+                    await rootBundle.load('lib/assets/pins/square.png');
+                final Uint8List uInt8Data = bytes.buffer.asUint8List();
+                String sourceId = (historyElement.element as Map)['id'];
+                await _mapController.addImageSource(
+                    sourceId,
+                    uInt8Data,
+                    LatLngQuad(
+                        topLeft: topLeftLatLng,
+                        topRight: topRightLatLng,
+                        bottomRight: bottomRightLatLng,
+                        bottomLeft: bottomLeftLatLng));
+
+                await _mapController.addImageLayer(sourceId, sourceId,
+                    maxzoom: maxZoom, minzoom: minZoom);
+                break;
+              }
+            case 'poly':
+              {
+                final ByteData bytes =
+                    await rootBundle.load('lib/assets/pins/circle.png');
+                final Uint8List uInt8Data = bytes.buffer.asUint8List();
+                String sourceId = (historyElement.element as Map)['id'];
+                await _mapController.addImageSource(
+                    sourceId,
+                    uInt8Data,
+                    LatLngQuad(
+                        topLeft: topLeftLatLng,
+                        topRight: topRightLatLng,
+                        bottomRight: bottomRightLatLng,
+                        bottomLeft: bottomLeftLatLng));
+
+                await _mapController.addImageLayer(sourceId, sourceId,
+                    maxzoom: maxZoom, minzoom: minZoom);
+                break;
+              }
+            default:
+          }
+          break;
+        }
+      case HCategory.polyline:
+        {
+          switch (historyElement.name) {
+            case 'sline':
+              {
+                Set<Line> tempLines = _mapController.lines;
+                List<LatLng> tempLatLngList = ((historyElement.element
+                        as Map)['geometry']['coordinates'] as List<dynamic>)
+                    .map((e) => LatLng(e.last, e.first))
+                    .toList();
+                await _mapController.addLine(LineOptions(
+                    lineColor: (historyElement.element as Map)['properties']
+                        ['lineColor'],
+                    lineWidth: 3,
+                    geometry: tempLatLngList,
+                    lineOpacity: 0.6));
+                if (tempLines.isNotEmpty) {
+                  Line tempLine = tempLines.last;
+                  if (tempLatLngList[tempLatLngList.length - 2].latitude ==
+                          tempLine.options.geometry!.last.latitude &&
+                      tempLatLngList[tempLatLngList.length - 2].longitude ==
+                          tempLine.options.geometry!.last.longitude) {
+                    await _mapController.removeLine(tempLine);
+                  }
+                }
+
+                break;
+              }
+            default:
+          }
+          break;
+        }
+      default:
+    }
+  }
+
+  Future<void> _deleteHistoryAction(HistoryElement historyElement) async {
+    switch (historyElement.catagory) {
+      case HCategory.symbol:
+        {
+          Set<Symbol> symbols = _mapController.symbols;
+          await _mapController.removeSymbol(symbols.last);
+          break;
+        }
+      case HCategory.shape:
+        {
+          switch (historyElement.name) {
+            case 'circle' || 'square' || 'triangle' || 'rectangle':
+              {
+                await _mapController
+                    .removeLayer((historyElement.element as Map)['id']);
+                await _mapController
+                    .removeSource((historyElement.element as Map)['id']);
+                break;
+              }
+            case 'poly':
+              {
+                await _mapController
+                    .removeLayer((historyElement.element as Map)['id']);
+                break;
+              }
+            default:
+          }
+          break;
+        }
+      case HCategory.polyline:
+        {
+          switch (historyElement.name) {
+            case 'sline':
+              {
+                Set<Line> lines = _mapController.lines;
+
+                Line tempLine = lines.last;
+                // List<LatLng> tempLatLngList = ((historyElement.element
+                //         as Map)['geometry']['coordinates'] as List<dynamic>)
+                //     .map((e) => LatLng(e.last, e.first))
+                //     .toList();
+                List<LatLng> tempLatLngList = tempLine.options.geometry!;
+                if (tempLatLngList.length > 2) {
+                  tempLatLngList.removeLast();
+                  await _mapController.addLine(LineOptions(
+                      lineColor: tempLine.options.lineColor,
+                      lineWidth: 3,
+                      geometry: tempLatLngList,
+                      lineOpacity: 0.5));
+                }
+                await _mapController.removeLine(tempLine);
+                break;
+              }
+            default:
+          }
+          break;
+        }
+      default:
+    }
   }
 
   Visibility _historyPannel(BuildContext context) {
     return Visibility(
       visible: true,
       child: Positioned(
-        top: 0,
-        child: Container(
-          height: 80,
-          color: Colors.white,
-          alignment: Alignment.bottomCenter,
-          padding: const EdgeInsets.only(bottom: 13),
-          child: SizedBox(
-            height: 30,
-            width: MediaQuery.of(context).size.width,
-            child: ListView.builder(
-                itemCount: elementIds.length,
-                reverse: true,
-                shrinkWrap: true,
-                scrollDirection: Axis.horizontal,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 15.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                          color: const Color.fromARGB(201, 184, 184, 184),
-                          borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.all(5.0),
-                      child: GestureDetector(
-                        onTap: () async {
-                          if (index != 0) {
-                            for (int i = 0; i < index; i++) {
-                              await _mapController.removeLayer(elementIds[i]);
-                            }
-                            elementIds.removeRange(0, index);
-                            elementNames.removeRange(0, index);
-                            setState(() {});
-                          }
-                        },
+        // top: 30,
+        child: SizedBox(
+          height: 35,
+          width: MediaQuery.of(context).size.width,
+          child: ListView.builder(
+              itemCount: historyLength(),
+              reverse: true,
+              shrinkWrap: true,
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 5.0, left: 5, top: 5),
+                  child: Container(
+                    decoration: BoxDecoration(
+                        color: Colors.deepPurple,
+                        borderRadius: BorderRadius.circular(5)),
+                    padding: const EdgeInsets.all(5.0),
+                    child: GestureDetector(
+                      onTap: () async {
+                        historyUndoRange((historyLength() - index));
+                      },
+                      child: SizedBox(
+                        height: 28,
+                        width: 80,
                         child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              '${elementNames.length - index}.',
+                              '${historyLength() - index}. ',
                               style: GoogleFonts.montserrat(
-                                  fontSize: 17, fontWeight: FontWeight.bold),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color.fromARGB(255, 207, 207, 207)),
                             ),
                             Text(
-                              elementNames[index],
-                              style: GoogleFonts.montserrat(fontSize: 15),
+                              historyGet(index: (historyLength() - index) - 1)
+                                  .name,
+                              style: GoogleFonts.montserrat(
+                                  fontSize: 14,
+                                  color: Color.fromARGB(255, 207, 207, 207)),
                             ),
                           ],
                         ),
                       ),
                     ),
-                  );
-                }),
-          ),
+                  ),
+                );
+              }),
         ),
       ),
     );
@@ -204,12 +611,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 ),
                 GestureDetector(
                   onTap: () {
+                    historyRemoveLast();
                     shapeConfirmationVisibility = false;
                     setState(() {});
-                    if (lastShape.isNotEmpty) {
-                      elementIds.remove(lastShape);
-                      _mapController.removeLayer(lastShape);
-                    }
                   },
                   child: Container(
                     width: 40,
@@ -238,12 +642,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                   const Color.fromARGB(131, 238, 238, 238).withOpacity(0.5),
               tooltip: 'undo',
               onPressed: () async {
-                // _mapController.removeLayer(elementIds[0]);
-                // redoElementIds.insert(0, elementIds[0]);
-                // redoElementNames.insert(0, elementNames[0]);
-                // elementIds.removeAt(0);
-                // elementNames.removeAt(0);
-                // shapeConfirmationVisibility = false;
+                shapeConfirmationVisibility = false;
                 historyUndo();
                 setState(() {});
               },
@@ -258,13 +657,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
               tooltip: 'redo',
               onPressed: () async {
                 if (redoElementIds.isEmpty) {
-                  // await _mapController.addImageLayer(
-                  //     redoElementIds[0], redoElementIds[0]);
-                  // elementIds.insert(0, redoElementIds[0]);
-                  // elementNames.insert(0, redoElementNames[0]);
-                  // redoElementIds.removeAt(0);
-                  // redoElementNames.removeAt(0);
-                  // shapeConfirmationVisibility = false;
+                  shapeConfirmationVisibility = false;
                   historyRedo();
                   setState(() {});
                 }
@@ -421,16 +814,14 @@ class _PlannerScreenState extends State<PlannerScreen> {
     //     geometry: bottomRightLatLng,
     //     circleRadius: 5));
     // setState(() {});
+
     switch (shape) {
       case PShapes.circle:
         {
           final ByteData bytes =
               await rootBundle.load('lib/assets/pins/circle.png');
           final Uint8List uInt8Data = bytes.buffer.asUint8List();
-          String sourceId = DateTime.now().microsecond.toString();
-          elementIds.insert(0, sourceId);
-          elementNames.insert(0, 'circle');
-          lastShape = sourceId;
+          String sourceId = getRandomStr(30);
           await _mapController.addImageSource(
               sourceId,
               uInt8Data,
@@ -442,6 +833,22 @@ class _PlannerScreenState extends State<PlannerScreen> {
 
           await _mapController.addImageLayer(sourceId, sourceId,
               maxzoom: maxZoom, minzoom: minZoom);
+          historyAdd(
+              name: 'circle',
+              category: HCategory.shape,
+              action: HAction.add,
+              element: {
+                'id': sourceId,
+                'bytes': uInt8Data,
+                'maxzoom': maxZoom,
+                'minzoom': minZoom,
+                'coordinates': {
+                  'topLeft': topLeftLatLng,
+                  'topRight': topRightLatLng,
+                  'bottomRight': bottomRightLatLng,
+                  'bottomLeft': bottomLeftLatLng
+                }
+              });
           break;
         }
       case PShapes.square:
@@ -449,10 +856,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
           final ByteData bytes =
               await rootBundle.load('lib/assets/pins/square.png');
           final Uint8List uInt8Data = bytes.buffer.asUint8List();
-          String sourceId = DateTime.now().microsecond.toString();
-          elementIds.insert(0, sourceId);
-          elementNames.insert(0, 'square');
-          lastShape = sourceId;
+          String sourceId = getRandomStr(30);
           await _mapController.addImageSource(
               sourceId,
               uInt8Data,
@@ -464,6 +868,22 @@ class _PlannerScreenState extends State<PlannerScreen> {
 
           await _mapController.addImageLayer(sourceId, sourceId,
               maxzoom: maxZoom, minzoom: minZoom);
+          historyAdd(
+              name: 'square',
+              category: HCategory.shape,
+              action: HAction.add,
+              element: {
+                'id': sourceId,
+                'bytes': uInt8Data,
+                'maxzoom': maxZoom,
+                'minzoom': minZoom,
+                'coordinates': {
+                  'topLeft': topLeftLatLng,
+                  'topRight': topRightLatLng,
+                  'bottomRight': bottomRightLatLng,
+                  'bottomLeft': bottomLeftLatLng
+                }
+              });
           break;
         }
       case PShapes.triangle:
@@ -471,10 +891,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
           final ByteData bytes =
               await rootBundle.load('lib/assets/pins/triangle.png');
           final Uint8List uInt8Data = bytes.buffer.asUint8List();
-          String sourceId = DateTime.now().microsecond.toString();
-          elementIds.insert(0, sourceId);
-          elementNames.insert(0, 'triangle');
-          lastShape = sourceId;
+          String sourceId = getRandomStr(30);
           await _mapController.addImageSource(
               sourceId,
               uInt8Data,
@@ -486,6 +903,22 @@ class _PlannerScreenState extends State<PlannerScreen> {
 
           await _mapController.addImageLayer(sourceId, sourceId,
               maxzoom: maxZoom, minzoom: minZoom);
+          historyAdd(
+              name: 'triangle',
+              category: HCategory.shape,
+              action: HAction.add,
+              element: {
+                'id': sourceId,
+                'bytes': uInt8Data,
+                'maxzoom': maxZoom,
+                'minzoom': minZoom,
+                'coordinates': {
+                  'topLeft': topLeftLatLng,
+                  'topRight': topRightLatLng,
+                  'bottomRight': bottomRightLatLng,
+                  'bottomLeft': bottomLeftLatLng
+                }
+              });
           break;
         }
       case PShapes.rectangle:
@@ -493,10 +926,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
           final ByteData bytes =
               await rootBundle.load('lib/assets/pins/square.png');
           final Uint8List uInt8Data = bytes.buffer.asUint8List();
-          String sourceId = DateTime.now().microsecond.toString();
-          elementIds.insert(0, sourceId);
-          elementNames.insert(0, 'rectangle');
-          lastShape = sourceId;
+          String sourceId = getRandomStr(30);
           await _mapController.addImageSource(
               sourceId,
               uInt8Data,
@@ -508,6 +938,22 @@ class _PlannerScreenState extends State<PlannerScreen> {
 
           await _mapController.addImageLayer(sourceId, sourceId,
               maxzoom: maxZoom, minzoom: minZoom);
+          historyAdd(
+              name: 'rectangle',
+              category: HCategory.shape,
+              action: HAction.add,
+              element: {
+                'id': sourceId,
+                'bytes': uInt8Data,
+                'maxzoom': maxZoom,
+                'minzoom': minZoom,
+                'coordinates': {
+                  'topLeft': topLeftLatLng,
+                  'topRight': topRightLatLng,
+                  'bottomRight': bottomRightLatLng,
+                  'bottomLeft': bottomLeftLatLng
+                }
+              });
           break;
         }
       case PShapes.poly:
@@ -515,10 +961,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
           final ByteData bytes =
               await rootBundle.load('lib/assets/pins/circle.png');
           final Uint8List uInt8Data = bytes.buffer.asUint8List();
-          String sourceId = DateTime.now().microsecond.toString();
-          elementIds.insert(0, sourceId);
-          elementNames.insert(0, 'poly');
-          lastShape = sourceId;
+          String sourceId = getRandomStr(30);
           await _mapController.addImageSource(
               sourceId,
               uInt8Data,
@@ -530,6 +973,22 @@ class _PlannerScreenState extends State<PlannerScreen> {
 
           await _mapController.addImageLayer(sourceId, sourceId,
               maxzoom: maxZoom, minzoom: minZoom);
+          historyAdd(
+              name: 'shape',
+              category: HCategory.shape,
+              action: HAction.add,
+              element: {
+                'id': sourceId,
+                'bytes': uInt8Data,
+                'maxzoom': maxZoom,
+                'minzoom': minZoom,
+                'coordinates': {
+                  'topLeft': topLeftLatLng,
+                  'topRight': topRightLatLng,
+                  'bottomRight': bottomRightLatLng,
+                  'bottomLeft': bottomLeftLatLng
+                }
+              });
           break;
         }
       default:
@@ -561,7 +1020,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 highlightColor:
                     const Color.fromARGB(131, 238, 238, 238).withOpacity(0.5),
                 tooltip: 'red flag',
-                visualDensity: const VisualDensity(vertical: 3),
                 onPressed: () {
                   _putPin(name: 'red-flag');
                 },
@@ -578,7 +1036,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 highlightColor:
                     const Color.fromARGB(131, 238, 238, 238).withOpacity(0.5),
                 tooltip: 'yellow flag',
-                visualDensity: const VisualDensity(vertical: 3),
                 onPressed: () {},
                 icon: Image.asset(
                   'lib/assets/pins/red-flag-hint-pin.png',
@@ -593,7 +1050,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 highlightColor:
                     const Color.fromARGB(131, 238, 238, 238).withOpacity(0.5),
                 tooltip: 'green flag',
-                visualDensity: const VisualDensity(vertical: 3),
                 onPressed: () {},
                 icon: Image.asset(
                   'lib/assets/pins/red-flag-hint-pin.png',
@@ -608,7 +1064,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 highlightColor:
                     const Color.fromARGB(131, 238, 238, 238).withOpacity(0.5),
                 tooltip: 'blue flag',
-                visualDensity: const VisualDensity(vertical: 3),
                 onPressed: () {},
                 icon: Image.asset(
                   'lib/assets/pins/red-flag-hint-pin.png',
@@ -623,7 +1078,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
 
   void _toggleTools({PTools desiredTool = PTools.none}) {
     setState(() {
-      if (tools != PTools.none) {
+      if (tools == desiredTool) {
         tools = PTools.none;
       } else {
         tools = desiredTool;
@@ -633,9 +1088,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
 
   void _putPin({required String name}) async {
     LatLng centerLatlng = await _mapController.toLatLng(centerPointAsPoint);
-    pins.add(Symbol(
-        '${pins.length}',
-        SymbolOptions(
+    _mapController
+        .addSymbol(SymbolOptions(
             iconImage: name,
             iconSize: 0.2,
             textField: '',
@@ -644,11 +1098,17 @@ class _PlannerScreenState extends State<PlannerScreen> {
             textSize: 15,
             textOffset: const Offset(-0.6, 1.3),
             textHaloColor: 'grey',
-            geometry: centerLatlng)));
-    _mapController.addSymbol(pins.last.options).then((symbol) {
-      historyAdd(name: 'symbol', element: symbol);
+            geometry: centerLatlng))
+        .then((symbol) {
+      historyAdd(
+          name: 'symbol',
+          category: HCategory.symbol,
+          action: HAction.add,
+          element: symbol.toGeoJson());
     });
   }
+
+  void _connectSymbols() {}
 
   Offset getCenterScreenPoint(BuildContext context) {
     final screenSize = View.of(context).physicalSize;
@@ -656,29 +1116,89 @@ class _PlannerScreenState extends State<PlannerScreen> {
     return centerPoint;
   }
 
-  void historyAdd({required String name, required Object element}) {
-    context.read<PlannerHistoryProvider>().add(name: name, element: element);
+  HistoryElement? historyGetFirst() {
+    return context.read<PlannerHistoryProvider>().getFirst;
   }
 
-  void historyGet({required int index}) {
-    context.read<PlannerHistoryProvider>().get(index);
+  HistoryElement? historyGetLast() {
+    return context.read<PlannerHistoryProvider>().getLast;
+  }
+
+  HistoryElement? historyRedoGetFirst() {
+    return context.read<PlannerHistoryProvider>().redoGetFirst;
+  }
+
+  HistoryElement? historyRedoGetLast() {
+    return context.read<PlannerHistoryProvider>().redoGetLast;
+  }
+
+  void historyRemoveLast() {
+    HistoryElement? historyElement = historyGetLast();
+    if (historyElement != null) {
+      _performOppositeHistoryAction(historyElement);
+      context.read<PlannerHistoryProvider>().removeLast;
+    }
+  }
+
+  void historyRemoveFirst() {
+    HistoryElement? historyElement = historyGetFirst();
+    if (historyElement != null) {
+      _performOppositeHistoryAction(historyElement);
+      context.read<PlannerHistoryProvider>().removeFirst;
+    }
+  }
+
+  void historyRemoveRange(int start, int end) {
+    context.read<PlannerHistoryProvider>().removeRange(start: start, end: end);
+  }
+
+  void historyAdd(
+      {required String name,
+      required HAction action,
+      required HCategory category,
+      required Object element}) {
+    context
+        .read<PlannerHistoryProvider>()
+        .add(name: name, action: action, element: element, category: category);
+  }
+
+  HistoryElement historyGet({required int index}) {
+    return context.read<PlannerHistoryProvider>().get(index);
   }
 
   void historyRedo() {
-    context.read<PlannerHistoryProvider>().redo;
+    HistoryElement? historyElement = historyRedoGetLast();
+    if (historyElement != null) {
+      _performHistoryAction(historyElement);
+      context.read<PlannerHistoryProvider>().redo;
+    }
+    setState(() {});
   }
 
   void historyUndo() {
-    context.read<PlannerHistoryProvider>().undo;
+    HistoryElement? historyElement = historyGetLast();
+    if (historyElement != null) {
+      _performOppositeHistoryAction(historyElement);
+      context.read<PlannerHistoryProvider>().undo;
+    }
+    setState(() {});
   }
 
   void historyClear() {
     context.read<PlannerHistoryProvider>().clear;
   }
 
-  void historyUndoRange(int start, int end) {
-    context.read<PlannerHistoryProvider>().undoRange(start, end);
+  Future<void> historyUndoRange(int start) async {
+    for (int i = start; i < historyLength(); i++) {
+      await _performOppositeHistoryAction(historyGet(index: i));
+    }
+    // ignore: use_build_context_synchronously
+    context.read<PlannerHistoryProvider>().undoRange(start);
+    setState(() {});
   }
+
+  int historyLength() => context.read<PlannerHistoryProvider>().historyLength;
+  int historyRedoLength() => context.read<PlannerHistoryProvider>().redoLength;
 
   @override
   void dispose() {

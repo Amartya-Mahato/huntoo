@@ -1,13 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:huntoo/providers/planner_history_provider/history_element.dart';
 
+import '../../global/enums.dart';
+
 class PlannerHistoryProvider extends ChangeNotifier {
   List<HistoryElement> historyList = [];
   List<HistoryElement> redoList = [];
 
-  bool add({required String name, required Object element}) {
+  int get historyLength => historyList.length;
+  int get redoLength => redoList.length;
+
+  bool add(
+      {required String name,
+      required HAction action,
+      required Object element,
+      required HCategory category}) {
     try {
-      historyList.add(HistoryElement(name: name, element: element));
+      historyList.add(HistoryElement(
+          name: name, element: element, action: action, catagory: category));
       redoList.clear();
       notifyListeners();
     } catch (e) {
@@ -21,6 +31,59 @@ class PlannerHistoryProvider extends ChangeNotifier {
       throw ('$index index is out of bound');
     } else {
       return historyList[index];
+    }
+  }
+
+  void get removeLast {
+    if (historyList.isNotEmpty) {
+      historyList.removeLast();
+      notifyListeners();
+    }
+  }
+
+  void get removeFirst {
+    if (historyList.isNotEmpty) {
+      historyList.removeAt(0);
+      notifyListeners();
+    }
+  }
+
+  HistoryElement? get getLast {
+    if (historyList.isNotEmpty) {
+      return historyList.last;
+    } else {
+      return null;
+    }
+  }
+
+  HistoryElement? get getFirst {
+    if (historyList.isNotEmpty) {
+      return historyList.first;
+    } else {
+      return null;
+    }
+  }
+
+  HistoryElement? get redoGetLast {
+    if (redoList.isNotEmpty) {
+      return redoList.last;
+    } else {
+      return null;
+    }
+  }
+
+  HistoryElement? get redoGetFirst {
+    if (redoList.isNotEmpty) {
+      return redoList.first;
+    } else {
+      return null;
+    }
+  }
+
+  void removeRange({required int start, required int end}) {
+    if (historyList.isNotEmpty && start >= 0 && end <= historyList.length) {
+      historyList.removeRange(start, end);
+      notifyListeners();
     }
   }
 
@@ -46,12 +109,12 @@ class PlannerHistoryProvider extends ChangeNotifier {
     }
   }
 
-  void undoRange(int start, int end) {
+  void undoRange(int start) {
     if (historyList.isNotEmpty) {
-      for (int i = start; i < end; i++) {
+      for (int i = start; i < historyList.length; i++) {
         redoList.add(historyList[i]);
       }
-      historyList.removeRange(start, end);
+      historyList.removeRange(start, historyList.length);
       notifyListeners();
     }
   }
