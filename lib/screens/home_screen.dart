@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:huntoo/providers/map_provider.dart';
+import 'package:huntoo/providers/map_provider/map_provider.dart';
 import 'package:huntoo/screens/dash_board_screen.dart';
 import 'package:huntoo/screens/friend_list_screen.dart';
 import 'package:huntoo/screens/planner_screen.dart';
