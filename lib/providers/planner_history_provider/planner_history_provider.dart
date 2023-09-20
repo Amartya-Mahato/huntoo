@@ -111,7 +111,7 @@ class PlannerHistoryProvider extends ChangeNotifier {
 
   void undoRange(int start) {
     if (historyList.isNotEmpty) {
-      for (int i = start; i < historyList.length; i++) {
+      for (int i = historyList.length - 1; i >= start; i--) {
         redoList.add(historyList[i]);
       }
       historyList.removeRange(start, historyList.length);

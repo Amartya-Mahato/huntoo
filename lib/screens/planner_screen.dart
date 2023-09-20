@@ -186,6 +186,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 action: HAction.add,
                 category: HCategory.polyline,
                 element: tempLine.toGeoJson());
+            print('----------' + tempLatLngList.toString());
           }
           lastConnectorSymbolLatLng = argument.options.geometry!;
           setState(() {});
@@ -441,14 +442,10 @@ class _PlannerScreenState extends State<PlannerScreen> {
                     lineOpacity: 0.6));
                 if (tempLines.isNotEmpty) {
                   Line tempLine = tempLines.last;
-                  if (tempLatLngList[tempLatLngList.length - 2].latitude ==
-                          tempLine.options.geometry!.last.latitude &&
-                      tempLatLngList[tempLatLngList.length - 2].longitude ==
-                          tempLine.options.geometry!.last.longitude) {
+                  if (tempLatLngList.length > 2) {
                     await _mapController.removeLine(tempLine);
                   }
                 }
-
                 break;
               }
             default:
@@ -494,12 +491,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
             case 'sline':
               {
                 Set<Line> lines = _mapController.lines;
-
                 Line tempLine = lines.last;
-                // List<LatLng> tempLatLngList = ((historyElement.element
-                //         as Map)['geometry']['coordinates'] as List<dynamic>)
-                //     .map((e) => LatLng(e.last, e.first))
-                //     .toList();
                 List<LatLng> tempLatLngList = tempLine.options.geometry!;
                 if (tempLatLngList.length > 2) {
                   tempLatLngList.removeLast();
@@ -548,7 +540,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                       },
                       child: SizedBox(
                         height: 28,
-                        width: 80,
+                        width: 90,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -672,6 +664,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
               highlightColor:
                   const Color.fromARGB(131, 238, 238, 238).withOpacity(0.5),
               onPressed: () {
+                lastConnectorSymbolLatLng = null;
                 _toggleTools(desiredTool: PTools.connector);
               },
               icon: const Icon(Icons.polyline_rounded)),
@@ -684,6 +677,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
               highlightColor:
                   const Color.fromARGB(131, 238, 238, 238).withOpacity(0.5),
               onPressed: () {
+                lastConnectorSymbolLatLng = null;
                 _toggleTools(desiredTool: PTools.shape);
               },
               icon: const Icon(Icons.shape_line)),
@@ -696,6 +690,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
               highlightColor:
                   const Color.fromARGB(131, 238, 238, 238).withOpacity(0.5),
               onPressed: () {
+                lastConnectorSymbolLatLng = null;
                 _toggleTools(desiredTool: PTools.pin);
               },
               icon: const Icon(Icons.add_location_alt_rounded)),
