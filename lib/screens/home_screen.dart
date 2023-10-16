@@ -43,21 +43,33 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: Colors.black,
         elevation: 0.0,
-        unselectedItemColor: Colors.deepPurple.shade200,
-        selectedItemColor: Colors.deepPurple.shade700,
+        unselectedItemColor: Color.fromARGB(255, 124, 88, 25),
+        selectedItemColor: Color.fromARGB(255, 163, 109, 7),
         onTap: _bottomNav,
         currentIndex: currIndex,
         items: const [
           BottomNavigationBarItem(
-              icon: Icon(Icons.home_filled), label: 'Dashboard'),
+              backgroundColor: Colors.black,
+              icon: Icon(Icons.home_filled),
+              label: 'Dashboard'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.search_rounded), label: 'Planner'),
+              backgroundColor: Colors.black,
+              icon: Icon(Icons.search_rounded),
+              label: 'Planner'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.local_hospital_rounded), label: 'Create'),
+              backgroundColor: Colors.black,
+              icon: Icon(Icons.local_hospital_rounded),
+              label: 'Create'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.people_alt_rounded), label: 'Friends'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+              backgroundColor: Colors.black,
+              icon: Icon(Icons.people_alt_rounded),
+              label: 'Friends'),
+          BottomNavigationBarItem(
+              backgroundColor: Colors.black,
+              icon: Icon(Icons.person),
+              label: 'Profile'),
         ],
       ),
     );

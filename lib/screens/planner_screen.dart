@@ -41,6 +41,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
   bool symbolConnector = false;
   bool pointConnector = false;
   Circle? circle;
+  Object? object;
 
   @override
   void initState() {
@@ -121,55 +122,22 @@ class _PlannerScreenState extends State<PlannerScreen> {
     _mapController.onSymbolTapped.add(
       (argument) async {
         if (symbolConnector) {
-          // if (lineLatLngs.length >= 2 &&
-          //     lineLatLngs.last.latitude ==
-          //         argument.options.geometry!.latitude &&
-          //     lineLatLngs.last.longitude ==
-          //         argument.options.geometry!.longitude) {
-          //   if (lineLatLngs.length > 2) {
-          //     Set<Line> lines = _mapController.lines;
-          //     lineLatLngs.removeLast();
-          //     await _mapController.addLine(LineOptions(
-          //         lineColor: 'black',
-          //         lineWidth: 3,
-          //         geometry: lineLatLngs,
-          //         lineOpacity: 0.5));
-          //     await _mapController.removeLine(lines.last);
-          //   }
-          //   return;
-          // }
-          // lineLatLngs.add(argument.options.geometry!);
-
-          // if (lineLatLngs.length >= 2) {
-          //   if (lineLatLngs.length > 2) {
-          //     Set<Line> lines = _mapController.lines;
-          //     await _mapController.removeLine(lines.last);
-          //   }
-
-          //   _mapController.addLine(LineOptions(
-          //       lineColor: 'black',
-          //       lineWidth: 3,
-          //       geometry: lineLatLngs,
-          //       lineOpacity: 0.5));
-          // }
-          // setState(() {});
-
           if (lastConnectorSymbolLatLng != null) {
             List<LatLng> tempLatLngList = [];
             Line tempLine;
-            if (historyLength() > 0 && historyGetLast()!.name == 'sline') {
-              tempLatLngList = ((historyGetLast()!.element as Map)['geometry']
-                      ['coordinates'] as List<dynamic>)
-                  .map((e) => LatLng(e.last, e.first))
-                  .toList();
+            HistoryElement? hElement = historyGetLast();
+            if (historyLength() > 0 && hElement!.name == 'sline') {
+              tempLatLngList = _mapController.lines.last.options.geometry ?? [];
               tempLatLngList.add(argument.options.geometry!);
-              Line tmepPrevLine = _mapController.lines.last;
+
               tempLine = await _mapController.addLine(LineOptions(
                   lineColor: 'black',
                   lineWidth: 3,
                   geometry: tempLatLngList,
                   lineOpacity: 0.5));
-              await _mapController.removeLine(tmepPrevLine);
+
+              (historyGetLast()!.element as List).add(tempLine.toGeoJson());
+              await _mapController.removeLine(_mapController.lines.last);
             } else {
               tempLatLngList = [
                 lastConnectorSymbolLatLng!,
@@ -180,13 +148,12 @@ class _PlannerScreenState extends State<PlannerScreen> {
                   lineWidth: 3,
                   geometry: tempLatLngList,
                   lineOpacity: 0.5));
+              historyAdd(
+                  name: 'sline',
+                  action: HAction.add,
+                  category: HCategory.polyline,
+                  element: [tempLine.toGeoJson()]);
             }
-            historyAdd(
-                name: 'sline',
-                action: HAction.add,
-                category: HCategory.polyline,
-                element: tempLine.toGeoJson());
-            print('----------' + tempLatLngList.toString());
           }
           lastConnectorSymbolLatLng = argument.options.geometry!;
           setState(() {});
@@ -219,6 +186,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
   }
 
   void _onMapClick(Point<double> point, LatLng coordinates) async {
+    if (pointConnector) {
+      if (lastConnectorSymbolLatLng != null) {}
+    }
     // await _mapController.addCircle(CircleOptions(
     //     circleColor: 'red', geometry: coordinates, circleRadius: 5));
     // await _mapController.addLine(LineOptions(
@@ -429,22 +399,19 @@ class _PlannerScreenState extends State<PlannerScreen> {
           switch (historyElement.name) {
             case 'sline':
               {
-                Set<Line> tempLines = _mapController.lines;
-                List<LatLng> tempLatLngList = ((historyElement.element
-                        as Map)['geometry']['coordinates'] as List<dynamic>)
+                Line lastLine = _mapController.lines.last;
+                List<LatLng> tempLatLngList = ((historyElement.element as List)
+                        .last['geometry']['coordinates'] as List<dynamic>)
                     .map((e) => LatLng(e.last, e.first))
                     .toList();
                 await _mapController.addLine(LineOptions(
-                    lineColor: (historyElement.element as Map)['properties']
-                        ['lineColor'],
+                    lineColor: (historyElement.element as List)
+                        .last['properties']['lineColor'],
                     lineWidth: 3,
                     geometry: tempLatLngList,
-                    lineOpacity: 0.6));
-                if (tempLines.isNotEmpty) {
-                  Line tempLine = tempLines.last;
-                  if (tempLatLngList.length > 2) {
-                    await _mapController.removeLine(tempLine);
-                  }
+                    lineOpacity: 0.5));
+                if (tempLatLngList.length > 2) {
+                  await _mapController.removeLine(lastLine);
                 }
                 break;
               }
@@ -490,8 +457,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
           switch (historyElement.name) {
             case 'sline':
               {
-                Set<Line> lines = _mapController.lines;
-                Line tempLine = lines.last;
+                Line tempLine = _mapController.lines.last;
                 List<LatLng> tempLatLngList = tempLine.options.geometry!;
                 if (tempLatLngList.length > 2) {
                   tempLatLngList.removeLast();
@@ -527,8 +493,11 @@ class _PlannerScreenState extends State<PlannerScreen> {
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
               itemBuilder: (context, index) {
+                HistoryElement? historyElement =
+                    historyGet(index: (historyLength() - index) - 1);
                 return Padding(
-                  padding: const EdgeInsets.only(right: 5.0, left: 5, top: 5),
+                  padding: const EdgeInsets.only(
+                      right: 5.0, left: 2.5, top: 5, bottom: 2.5),
                   child: Container(
                     decoration: BoxDecoration(
                         color: Colors.deepPurple,
@@ -538,29 +507,70 @@ class _PlannerScreenState extends State<PlannerScreen> {
                       onTap: () async {
                         historyUndoRange((historyLength() - index));
                       },
-                      child: SizedBox(
-                        height: 28,
-                        width: 90,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              '${historyLength() - index}. ',
-                              style: GoogleFonts.montserrat(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color.fromARGB(255, 207, 207, 207)),
+                      child: historyElement.name == 'sline'
+                          ? DropdownButtonHideUnderline(
+                              child: DropdownButton(
+                                value: object,
+                                dropdownColor: Colors.black87,
+                                iconEnabledColor: Colors.white70,
+                                iconDisabledColor: Colors.white70,
+                                // hint: const Text('sline', style: TextStyle(color: Colors.white70),),
+                                onChanged: (obj) {
+                                  object = obj;
+                                  setState(() {});
+                                },
+                                items: List.generate(
+                                    (historyElement.element as List).length,
+                                    (index) => index + 1).map((e) {
+                                  return DropdownMenuItem(
+                                    onTap: () {},
+                                    value:
+                                        (historyElement.element as List)[e - 1],
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          '$e. ',
+                                          style: GoogleFonts.montserrat(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.bold,
+                                              color: const Color.fromARGB(
+                                                  255, 207, 207, 207)),
+                                        ),
+                                        Text(
+                                          historyElement.name,
+                                          style: GoogleFonts.montserrat(
+                                              fontSize: 14,
+                                              color: const Color.fromARGB(
+                                                  255, 207, 207, 207)),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  '${historyLength() - index}. ',
+                                  style: GoogleFonts.montserrat(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      color:
+                                          Color.fromARGB(255, 207, 207, 207)),
+                                ),
+                                Text(
+                                  historyElement.name,
+                                  style: GoogleFonts.montserrat(
+                                      fontSize: 14,
+                                      color:
+                                          Color.fromARGB(255, 207, 207, 207)),
+                                ),
+                              ],
                             ),
-                            Text(
-                              historyGet(index: (historyLength() - index) - 1)
-                                  .name,
-                              style: GoogleFonts.montserrat(
-                                  fontSize: 14,
-                                  color: Color.fromARGB(255, 207, 207, 207)),
-                            ),
-                          ],
-                        ),
-                      ),
                     ),
                   ),
                 );
@@ -603,8 +613,11 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 ),
                 GestureDetector(
                   onTap: () {
-                    historyRemoveLast();
-                    shapeConfirmationVisibility = false;
+                    if (symbolConnector) {
+                    } else {
+                      historyRemoveLast();
+                      shapeConfirmationVisibility = false;
+                    }
                     setState(() {});
                   },
                   child: Container(
@@ -1164,17 +1177,76 @@ class _PlannerScreenState extends State<PlannerScreen> {
   void historyRedo() {
     HistoryElement? historyElement = historyRedoGetLast();
     if (historyElement != null) {
-      _performHistoryAction(historyElement);
-      context.read<PlannerHistoryProvider>().redo;
+      switch (historyElement.name) {
+        case 'sline':
+          {
+            _performHistoryAction(historyElement);
+            if (historyLength() > 0 && historyGetLast()!.name == 'sline') {
+              (historyGetLast()!.element as List)
+                  .add((historyRedoGetLast()!.element as List).removeLast());
+            } else {
+              context.read<PlannerHistoryProvider>().historyList.add(
+                  HistoryElement(
+                      name: historyElement.name,
+                      element: [
+                        (historyRedoGetLast()!.element as List).removeLast()
+                      ],
+                      action: historyElement.action,
+                      catagory: historyElement.catagory));
+            }
+            if ((historyRedoGetLast()!.element as List).isEmpty) {
+              context.read<PlannerHistoryProvider>().redoList.removeLast();
+            }
+            break;
+          }
+        default:
+          {
+            _performHistoryAction(historyElement);
+            context.read<PlannerHistoryProvider>().redo;
+            break;
+          }
+      }
     }
     setState(() {});
   }
 
   void historyUndo() {
     HistoryElement? historyElement = historyGetLast();
+
     if (historyElement != null) {
-      _performOppositeHistoryAction(historyElement);
-      context.read<PlannerHistoryProvider>().undo;
+      switch (historyElement.name) {
+        case 'sline':
+          {
+            print('--------------' + (historyElement.element as List).length.toString());
+            _performOppositeHistoryAction(historyElement);
+            if (historyRedoLength() > 0 &&
+                historyRedoGetLast()!.name == 'sline') {
+              (historyRedoGetLast()!.element as List)
+                  .add((historyGetLast()!.element as List).removeLast());
+            } else {
+              context.read<PlannerHistoryProvider>().redoList.add(
+                  HistoryElement(
+                      name: historyElement.name,
+                      element: [
+                        (historyGetLast()!.element as List).removeLast()
+                      ],
+                      action: historyElement.action,
+                      catagory: historyElement.catagory));
+            }
+            if ((historyGetLast()!.element as List).isEmpty) {
+              historyRemoveLast();
+            }
+            print('++++++++++++++++' + (historyElement.element as List).length.toString());
+            print('================' + historyLength().toString());
+            break;
+          }
+        default:
+          {
+            _performOppositeHistoryAction(historyElement);
+            context.read<PlannerHistoryProvider>().undo;
+            break;
+          }
+      }
     }
     setState(() {});
   }
