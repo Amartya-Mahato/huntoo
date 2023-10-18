@@ -57,6 +57,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
     history = context.watch<PlannerHistoryProvider>().historyList;
     return SafeArea(
       child: Scaffold(
+      extendBody: true,
+
         body: Stack(
           children: [
             map,

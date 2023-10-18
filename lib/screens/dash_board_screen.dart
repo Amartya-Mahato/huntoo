@@ -30,6 +30,7 @@ class _DashBoardState extends State<DashBoard> {
     );
 
     return Scaffold(
+        extendBody: true,
         drawer: const Drawer(),
         appBar: AppBar(
           elevation: 0.0,
@@ -64,27 +65,53 @@ class _DashBoardState extends State<DashBoard> {
                   itemCount: 20,
                   itemBuilder: (context, index) {
                     return Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Container(
-                          height: 90,
-                          decoration: BoxDecoration(
-                              image: DecorationImage(
-                                  image: Image.asset('lib/assets/banner.png')
-                                      .image,
-                                  fit: BoxFit.cover),
-                              borderRadius: BorderRadius.circular(5)),
-                          child: ListTile(
-                            title: Text(
-                              "HUNT NAME",
-                              style: GoogleFonts.montserrat(fontSize: 18),
-                            ),
-                            subtitle: Text(
-                              "Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' will uncover many web sites still in their infancy. Various versions have evolved over the years, sometimes by accident, sometimes on purpose (injected humour and the like).",
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 3,
-                              style:  GoogleFonts.montserrat(),
-                            ),
-                          )),
+                      padding: const EdgeInsets.only(
+                          left: 10, right: 10, top: 8, bottom: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          CircleAvatar(
+                            radius: 25,
+                            backgroundImage:
+                                Image.asset('lib/assets/banner.png').image,
+                            foregroundImage:
+                                Image.asset('lib/assets/banner.png').image,
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 15.0),
+                            child: Container(
+                                height: 90,
+                                width: width - 130,
+                                decoration: BoxDecoration(
+                                    image: DecorationImage(
+                                        image:
+                                            Image.asset('lib/assets/banner.png')
+                                                .image,
+                                        fit: BoxFit.cover),
+                                    borderRadius: BorderRadius.circular(5)),
+                                child: Container(
+                                  color: Colors.black45,
+                                  child: ListTile(
+                                    title: Text(
+                                      "HUNT NAME",
+                                      style: GoogleFonts.montserrat(
+                                          fontSize: 18,
+                                          color:
+                                              Color.fromARGB(190, 255, 255, 255),
+                                          textStyle: const TextStyle(
+                                              fontWeight: FontWeight.bold)),
+                                    ),
+                                    subtitle: Text(
+                                      "Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' will uncover many web sites still in their infancy. Various versions have evolved over the years, sometimes by accident, sometimes on purpose (injected humour and the like)",
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 3,
+                                      style: GoogleFonts.montserrat(),
+                                    ),
+                                  ),
+                                )),
+                          ),
+                        ],
+                      ),
                     );
                   },
                 ),

@@ -29,45 +29,62 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: PageView(
-        controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(),
-        onPageChanged: _onPageChange,
-        children: const [
-          DashBoard(),
-          PlannerScreen(),
-          CreateHuntScreen(),
-          FriendListScreen(),
-          ProfileScreen(),
+      extendBody: true,
+      body: Stack(
+        children: [
+          PageView(
+            controller: _pageController,
+            physics: const NeverScrollableScrollPhysics(),
+            onPageChanged: _onPageChange,
+            children: const [
+              DashBoard(),
+              PlannerScreen(),
+              CreateHuntScreen(),
+              FriendListScreen(),
+              ProfileScreen(),
+            ],
+          ),
+          Positioned(
+            bottom: 0,
+            child: Container(
+              width: MediaQuery.of(context).size.width,
+              height: 60,
+              decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: [0, 0.55],
+                      colors: [Colors.transparent, Colors.black87])),
+            ),
+          )
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.transparent,
         elevation: 0.0,
-        unselectedItemColor: Color.fromARGB(255, 124, 88, 25),
-        selectedItemColor: Color.fromARGB(255, 163, 109, 7),
+        unselectedItemColor: const Color.fromARGB(255, 143, 101, 30),
+        selectedItemColor: const Color.fromARGB(255, 184, 122, 8),
         onTap: _bottomNav,
         currentIndex: currIndex,
         items: const [
           BottomNavigationBarItem(
-              backgroundColor: Colors.black,
+              backgroundColor: Colors.transparent,
               icon: Icon(Icons.home_filled),
               label: 'Dashboard'),
           BottomNavigationBarItem(
-              backgroundColor: Colors.black,
+              backgroundColor: Colors.transparent,
               icon: Icon(Icons.search_rounded),
               label: 'Planner'),
           BottomNavigationBarItem(
-              backgroundColor: Colors.black,
+              backgroundColor: Colors.transparent,
               icon: Icon(Icons.local_hospital_rounded),
               label: 'Create'),
           BottomNavigationBarItem(
-              backgroundColor: Colors.black,
+              backgroundColor: Colors.transparent,
               icon: Icon(Icons.people_alt_rounded),
               label: 'Friends'),
           BottomNavigationBarItem(
-              backgroundColor: Colors.black,
+              backgroundColor: Colors.transparent,
               icon: Icon(Icons.person),
               label: 'Profile'),
         ],

@@ -9,3 +9,4 @@ enum HAction { add, delete, modify }
 
 // History Categories
 enum HCategory { symbol, shape, polyline, fill }
+

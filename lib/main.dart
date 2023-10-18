@@ -22,8 +22,8 @@ class MyApp extends StatelessWidget {
         primaryColor: Colors.black,
         scaffoldBackgroundColor: Colors.black,
         appBarTheme: const AppBarTheme(color: Colors.black),
-        bottomNavigationBarTheme:
-            const BottomNavigationBarThemeData(backgroundColor: Colors.black),
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+            backgroundColor: Colors.transparent),
       ),
       home: MultiProvider(providers: [
         ChangeNotifierProvider(create: (_) => MapProvider()),

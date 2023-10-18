@@ -42,7 +42,7 @@ class _CreateHuntMapScreenState extends State<CreateHuntMapScreen> {
                         onTap: () {},
                         child: Container(
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(255, 163, 109, 7),
+                                color: const Color.fromARGB(255, 163, 109, 7),
                                 borderRadius: BorderRadius.circular(20)),
                             child: Padding(
                               padding: const EdgeInsets.only(
@@ -60,7 +60,7 @@ class _CreateHuntMapScreenState extends State<CreateHuntMapScreen> {
                         onTap: () {},
                         child: Container(
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(255, 163, 109, 7),
+                                color: const Color.fromARGB(255, 163, 109, 7),
                                 borderRadius: BorderRadius.circular(20)),
                             child: Padding(
                               padding: const EdgeInsets.only(
