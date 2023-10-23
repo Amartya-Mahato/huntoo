@@ -10,8 +10,7 @@ class CreateHuntScreen extends StatefulWidget {
   State<CreateHuntScreen> createState() => _CreateHuntScreenState();
 }
 
-class _CreateHuntScreenState extends State<CreateHuntScreen>
-    with SingleTickerProviderStateMixin {
+class _CreateHuntScreenState extends State<CreateHuntScreen> {
   bool toggle = true;
 
   @override
@@ -152,7 +151,7 @@ class _CreateHuntScreenState extends State<CreateHuntScreen>
                                     style: GoogleFonts.montserrat(
                                         fontSize: 18,
                                         color:
-                                            Color.fromARGB(190, 255, 255, 255),
+                                            const Color.fromARGB(190, 255, 255, 255),
                                         textStyle: const TextStyle(
                                             fontWeight: FontWeight.bold)),
                                   ),

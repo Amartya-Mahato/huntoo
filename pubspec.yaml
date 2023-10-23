@@ -46,6 +46,8 @@ dependencies:
         url: https://github.com/maplibre/flutter-maplibre-gl.git
         ref: main
   dotted_border: ^2.0.0+3
+  chart_sparkline: ^1.0.14
+  carousel_slider: ^4.2.1
 
 dev_dependencies:
   flutter_test:
